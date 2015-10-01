@@ -127,11 +127,14 @@ function StartReadSeq_Callback(hObject, eventdata, handles)
 % Get UserData from the Openfile
 data = get(handles.Openfile,'UserData');
 FileName = data.initialFrameName;
-
+BaseFileName = FileName(1:end-5);
+Ext = FileName(end-3:end);
 %Read image sequence
-%for i=61:70
-%    sprintf(FileName,i)
-%    img = imread( sprintf(FileName,i) );
-%    image(img);
-%end
+for i=0:9       
+    i
+    sprintf('%s%d%s',BaseFileName,i,Ext);
+    img = imread(sprintf('%s%d%s',BaseFileName,i,Ext) );    
+    image(img);
+    pause(1)
+end
 end
