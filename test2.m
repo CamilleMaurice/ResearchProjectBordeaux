@@ -1,15 +1,24 @@
-function flow = test2()
+function labels = test2(filename)
 
-im = imread('cow.jpeg');
-%im = imread('Lenna.png');
+%Optical flow test
+%addpath(genpath('OpticalFlow'));
+%prev = imread('car1.jpg');
+%curr = imread('car2.jpg');
+%tic
+%[u, v] = optic_flow_brox(prev, curr);
+%[vx vy] = getOpticalFlow_Brox(prev,curr);
+%toc
 %figure(1)
+%imagesc(sqrt(u.^2 + v.^2))
 %imshow(rgb2gray(im))
 
 %normalized greyscale image
-
+%im = imread('car1.jpg');
+im = imread(filename);
+%GET INPUT IMAGE FROM GUI
 m = double(rgb2gray(im))/255;
-figure(1)
-imshow(m)
+% figure(1)
+% imshow(m)
 
 %Convert image matrix into vector
 reshape([m], [], 1);
@@ -56,9 +65,9 @@ disp('calculating maximum flow');
 [flow,labels] = maxflow(A,T);
 labels = reshape(labels,[height width]);
 
- figure(2)
-  imshow(m);
- hold on;
-  %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
- colormap(gray)
- imcontour(uint8(labels))
+%  figure(2)
+%   imshow(m);
+%  hold on;
+%   %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
+%  colormap(gray)
+%  imcontour(uint8(labels))

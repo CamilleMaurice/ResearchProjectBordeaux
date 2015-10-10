@@ -57,7 +57,7 @@ handles.output = hObject;
 
 
 %Share data among callbacks 
-data = struct('initialFrameName','default','OtherData',0);
+data = struct('initialFrameName','default','Segmentation','default');
 set(handles.Openfile,'UserData',data);
 
 % Update handles structure
@@ -93,6 +93,18 @@ function maxflowCheckBox_Callback(hObject, eventdata, handles)
 % hObject    handle to maxflowCheckBox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+data = get(handles.Openfile,'UserData');
+FileName = data.initialFrameName;
+labels = test2(FileName);
+data.segmentation = labels;
+  image(imread(FileName));
+ hold on;
+  %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
+ colormap(gray)
+ LineSpec =  'r';
+ imcontour(uint8(labels), LineSpec)
+
+
 end
 % Hint: get(hObject,'Value') returns toggle state of maxflowCheckBox
 
@@ -188,15 +200,19 @@ function StartReadSeq_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of StartReadSeq
 % Get UserData from the Openfile
 data = get(handles.Openfile,'UserData');
-FileName = data.initialFrameName;
-BaseFileName = FileName(1:end-5);
-Ext = FileName(end-3:end);
-%Read image sequence
-for i=0:9       
-    i
-    sprintf('%s%d%s',BaseFileName,i,Ext);
-    img = imread(sprintf('%s%d%s',BaseFileName,i,Ext) );    
-    image(img);
-    pause(1)
-end
+
+% BaseFileName = FileName(1:end-5);
+% Ext = FileName(end-3:end);
+% %Read image sequence
+% for i=0:9       
+%     i
+%     sprintf('%s%d%s',BaseFileName,i,Ext);
+%     img = imread(sprintf('%s%d%s',BaseFileName,i,Ext) );    
+     image(labels);
+    hold all;
+%   %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
+  colormap(gray)
+  %imcontour(uint8(labels))  
+%     pause(1)
+% end
 end
