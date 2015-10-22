@@ -1,5 +1,6 @@
 function labels = test2(filename,roi)
 
+addpath(genpath('maxflow-v3.0'));
 %Optical flow test
 %addpath(genpath('OpticalFlow'));
 %prev = imread('car1.jpg');
@@ -12,8 +13,8 @@ function labels = test2(filename,roi)
 %imagesc(sqrt(u.^2 + v.^2))
 %GET INPUT IMAGE FROM GUI
 im = imread(filename);
-%m = double(rgb2gray(im))/255;
-m = im;
+m = double(rgb2gray(im))/255;
+%m = im;
 [height,width] = size(m);
 N = height*width;
 
@@ -58,8 +59,8 @@ E = edges4connected(height,width);
 %assuming the object is black and the background is white
 %costObj
 
-costObj = -log(probsObj);
-costBkg = -log(1-probsBkg); 
+costObj = abs(1-m);%;-log(probsObj);
+costBkg = abs(m);%-log(1-probsBkg); 
 
 
 %data term

@@ -95,14 +95,15 @@ function maxflowCheckBox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 data = get(handles.Openfile,'UserData');
 FileName = data.initialFrameName;
-labels = test2(FileName);
+labels = test2(FileName, data.roi);
 data.segmentation = labels;
-  image(imread(FileName));
- hold on;
-  %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
- colormap(gray)
- LineSpec =  'r';
- imcontour(uint8(labels), LineSpec)
+image(imread(FileName));
+hold on;
+%imagesc(labels); 
+%title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
+ %-colormap(gray)
+LineSpec =  'r';
+imcontour(uint8(labels), LineSpec)
 
 
 end
@@ -111,7 +112,7 @@ end
 
 % --------------------------------------------------------------------
 function Openfile_Callback(hObject, eventdata, handles)
-[FileName,PathName] = uigetfile({'*.png';'*.bmp';'*.jpeg'},'Load image');
+[FileName,PathName] = uigetfile({'*.bmp';'*.png';'*.jpeg'},'Load image');
 % hObject    handle to Openfile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -122,19 +123,20 @@ fullImageFileName = fullfile(PathName, FileName);
 
 data.initialFrameName = fullImageFileName;
 
-% Store data in UserData of Openfile
-set(hObject,'UserData',data);
-
 
 im_original = imread(fullImageFileName);
 image(im_original); 
 hold on;
 %pts = readPoints(image,2);
-%rect = getrect(im_original);
+rect = getrect();
 %rect
 h=imrect;
 rect=uint16(getPosition(h));
-rect;
+data.roi = rect;
+
+% Store data in UserData of Openfile
+set(hObject,'UserData',data);
+
 end
 
 
@@ -208,10 +210,10 @@ data = get(handles.Openfile,'UserData');
 %     i
 %     sprintf('%s%d%s',BaseFileName,i,Ext);
 %     img = imread(sprintf('%s%d%s',BaseFileName,i,Ext) );    
-     image(labels);
-    hold all;
+%%%     image(labels);
+%%%    hold all;
 %   %imagesc(labels); title(['labels // Alpha =',num2str(alpha),'sigma =', num2str(sigma)]);
-  colormap(gray)
+%%%  colormap(gray)
   %imcontour(uint8(labels))  
 %     pause(1)
 % end
