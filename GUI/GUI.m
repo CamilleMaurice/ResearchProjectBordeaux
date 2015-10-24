@@ -118,11 +118,8 @@ function Openfile_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 data = get(hObject,'UserData');
-
 fullImageFileName = fullfile(PathName, FileName);
-
 data.initialFrameName = fullImageFileName;
-
 
 im_original = imread(fullImageFileName);
 image(im_original); 
@@ -202,8 +199,18 @@ function StartReadSeq_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of StartReadSeq
 % Get UserData from the Openfile
 data = get(handles.Openfile,'UserData');
+dname = data.initialFrameName;
+filelist = dir([fileparts(dname) filesep '*.bmp']);
+fileNames = {filelist.name}';
+num_frames = (numel(filelist));
 
-% BaseFileName = FileName(1:end-5);
+for i=1:num_frames
+    I = imread(fullfile(dname(1:end-16), fileNames{i})); %to show the first image in the selected folder
+    imshow(I, []);
+    pause(1)
+end
+
+
 % Ext = FileName(end-3:end);
 % %Read image sequence
 % for i=0:9       
