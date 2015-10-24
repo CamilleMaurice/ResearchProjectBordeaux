@@ -57,7 +57,7 @@ handles.output = hObject;
 
 
 %Share data among callbacks 
-data = struct('initialFrameName','default','Segmentation','default');
+data = struct('initialFrameName','default','pathName', 'default', 'frameName', 'default','Segmentation','default');
 set(handles.Openfile,'UserData',data);
 
 % Update handles structure
@@ -119,8 +119,10 @@ function Openfile_Callback(hObject, eventdata, handles)
 
 data = get(hObject,'UserData');
 fullImageFileName = fullfile(PathName, FileName);
+%To do  : clean up this redondency
 data.initialFrameName = fullImageFileName;
-
+data.pathName = PathName;
+data.fileName = FileName;
 im_original = imread(fullImageFileName);
 image(im_original); 
 hold on;
@@ -205,7 +207,7 @@ fileNames = {filelist.name}';
 num_frames = (numel(filelist));
 
 for i=1:num_frames
-    I = imread(fullfile(dname(1:end-16), fileNames{i})); %to show the first image in the selected folder
+    I = imread(fullfile(data.pathName, fileNames{i})); %to show the first image in the selected folder
     imshow(I, []);
     pause(1)
 end
