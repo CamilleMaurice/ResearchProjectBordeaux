@@ -57,7 +57,7 @@ handles.output = hObject;
 
 
 %Share data among callbacks 
-data = struct('initialFrameName','default','pathName', 'default', 'method','default', 'roi', 'default','launchSegm',0);
+data = struct('firstFrame','default','pathName', 'default', 'method','default', 'roi', 'default','launchSegm',0);
 set(handles.Openfile,'UserData',data);
 
 % Update handles structure
@@ -131,7 +131,7 @@ function Openfile_Callback(hObject, eventdata, handles)
 data = get(hObject,'UserData');
 fullImageFileName = fullfile(PathName, FileName);
 %To do  : clean up this redondency
-data.initialFrameName = FileName;
+data.firstFrame = FileName;
 data.pathName = PathName;
 im_original = imread(fullImageFileName);
 image(im_original); 
@@ -210,7 +210,7 @@ function StartReadSeq_Callback(hObject, eventdata, handles)
 % Get UserData from the Openfile
 data = get(handles.Openfile,'UserData');
 %data.launchSegm=1;
-MC_segm(data.folder,data.first_frame,data.roi,data.method);
+MC_segm(data.pathName,data.firstFrame,data.roi,data.method);
 % dname = data.initialFrameName;
 % filelist = dir([fileparts(dname) filesep '*.bmp']);
 % fileNames = {filelist.name}';

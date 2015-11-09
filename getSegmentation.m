@@ -1,34 +1,33 @@
-function labels = getSegmentation(filename,roi)
-%Returns the segmented image from the current frame and the initial
-%selection of the object by the user : roi.
+function binarySegmentationMask = getSegmentation(filename,roi)
+n_bins = 16;
+max_displacement = 2;
+window_omega = 6;
+std = 0.5;
 
-addpath(genpath('maxflow-v3.0'));
-addpath(genpath('OpticalFlow'));
+gaussian = fspecial('gaussian', window_omega, std);
+
+% addpath(genpath('maxflow-v3.0'));
 
 current_frame = imread( filename );
 object_region = imcrop( current_frame, roi );
 bkg_region = getBkgRegion( roi, current_frame );
 
-[height,width,channels] = size( current_frame );
+[height,width,~] = size( current_frame );
 number_of_pixels = height*width;
 
-%%LABELS DEFINITION
-labels = zeros(height, width,2);
+%TODO:LABELS DEFINITION
+labels = zeros(height, width,3);
 segmentation_labels = labels(:,:,1);
 %O for bk 1 for fg
-displacement_labels = labels(:,:,2);
+displacement_labels = labels(:,:,2:3);
 
 %DATA TERM
-%APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
-max_displacement = 2;
-AS = zeros ( height, width, (2*max_displacement+1)^2 );
-window_omega = 6;
-std = 0.5
-gaussian = fspecial('gaussian', window_omega, std);
+%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
+app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
 cpt = 1;
 for y = -max_displacement:max_displacement
     for x = -max_displacement:max_displacement
-        AS(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
+        app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
         cpt = cpt +1;
     end
     
@@ -36,23 +35,20 @@ end
 %Need a function to create window around each pixel of the image.
 
 
-%%APPEARANCE MODEL
-%Compute Histograms
+%APPEARANCE MODEL
+%just check format with gc mex
 %Bkg region is 3 vectors : RGB!
-n_bins = 16;
 histoBkg = histo3D( bkg_region, n_bins );
 histoObj = histo3D( reshape( [object_region], [], 3 ), n_bins);
 
 %Compute Probabilities - normalize histograms
 probsObj = histoObj/size(reshape( [object_region], [], 3 ),1);
 probsBkg = histoBkg/size(bkg_region,1);
-%sum(sum(sum(probsObj))) == 1
-%sum(sum(sum(probsBkg))) == 1
 
 U_fg = zeros(height, width, 1);
 U_bg = zeros(height, width, 1);
 %OPTIMIZE THIS
-% Rcolor = current_frame(:,:,1);
+% Rcolor = current_frame(:,:,1);cpde appearan
 % Gcolor = current_frame(:,:,2);
 % Bcolor = current_frame(:,:,3);
 for j = 1 : height
@@ -67,56 +63,29 @@ end
 %%APPEARANCE MODEL DONE
 
 
-%SMOOTHNESS TERM
-%MOTION COHERENCE
-%ATTRIBUTE COHERENCE
+%TODO:SMOOTHNESS TERM spatial
+
+%TODO:MOTION COHERENCE
+%TODO:ATTRIBUTE COHERENCE
+
+%TODO: SAME WITH TEMPORAL NEIGHBORS
+%TODO:MOITON COHERENCE
+%TODO: ATTRIBUTE COHERENCE
+
+
 
 reshape( [current_frame], [], 1 );
-% construct graph
-E = edges4connected( height, width );
 
-%prior avec distribution de couleurs avec histogrammes
-%data term distance a lhistogramme
-% prendre probabilite dun pxiel de couleurs dans lhistogramme.
-% groupe de 16/8 pour la couleur (8*8*8)
-
-                                                                                                                                                                                                                                                                                                                                                                                                            
-%assuming the object is black and the background is white
-
-costObj = abs( 1 - current_frame );%;-log(probsObj);
-costBkg = abs( current_frame );%-log(1-probsBkg); 
-
-
-%data term
-T = [reshape([costObj], [], 1) , reshape([costBkg], [], 1) ];
-T = sparse(T);
-
-%smoothness term
-alpha = 0.8 ;
-sigma = 0.5 ;
-
-Intensity_pq = [current_frame(E(:,1)), current_frame(E(:,2))];
-Intensity_pq_diff = abs(Intensity_pq(:,1)-Intensity_pq(:,2)).*abs(Intensity_pq(:,1)-Intensity_pq(:,2));
-[idx,idy] = ind2sub([height, width], E(:,1));
-[idx2,idy2] = ind2sub([height, width], E(:,2));
-
-distance = sqrt((idx-idx2).^2 + (idy-idy2).^2);
-
-B = (alpha*(exp(-Intensity_pq_diff))/(2*sigma*sigma))./distance;
-
-A = sparse(E(:,1),E(:,2),B);
-
-disp('calculating maximum flow');
-
-[flow,labels] = maxflow(A,T);
-labels = reshape(labels,[height width]);
+%TODO CALL GC MEX
+%gfet the labels
+%TODO: construct the binary segmentation mask from the output labels
 
 end
+
+%returns the bckg pixels colors in a 1D vector
 function concatenatedImage = getBkgRegion(roi, image)
 %This function has been unary tested
 %Size of the image = size of the backgorund + size of the object
-
-%GET BACKGROUND CONCATENATED PIXELS
 size_im = size(image);
 RoiULx = roi(1);
 RoiULy = roi(2);
