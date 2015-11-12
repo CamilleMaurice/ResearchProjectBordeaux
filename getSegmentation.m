@@ -189,6 +189,19 @@ function distance = getDistanceBtwLabels ( lp, lq, index )
 end
 
 function score = getApperanceSimilarity( label, index, window_omega, currentFrame, previousFrame )
+%SCORE will actually be the matrix of scores    
+%TO DO PADARRAY both frame WITH 0
+%CREATE GAUSSIAN
+%Create CENTERED WINDOW IN EACH PIXEL
+%LOOP LIKE A SLIDING WINDOW
+%COMPUTE GSAD BETWEEN PATCHES (curr(+dx+dy according to label) and prev (OR
+%CURR AND NEXT THINK ABOUT THAT)
+label_info = index(lp,2:end);
+dx = label_info(2);
+dy = label_info(3);
+%currPadded = ;
+%prevPadded = ;
+
 
     
 end
