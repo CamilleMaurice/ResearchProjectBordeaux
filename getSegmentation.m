@@ -142,22 +142,24 @@ function index = createIndex()
  index = index(1:end -1, :);
 end
 
-%For initialization all dx, dy are set to 0, we choose the label
-%corresponding to bg/fg with displacement 00;
-% function class = createClass (image, roi, index)
-%     [h, w, ~] = size(image);
-%     class = zeros (h, w);
-%     for y = 1:h
-%         for x = 1:w
-%             if (isInRoi(y, x, roi))
-%                 class(y,x) = 
-%             else
-%         
-%     end
-% 
-%         end
-%     end
-% end
+% For initialization all dx, dy are set to 0, we choose the label
+% corresponding to bg/fg with displacement 00;
+function class = createClass (image, roi, index)
+    [h, w, ~] = size(image);
+    class = zeros (h, w);
+    labelFg00 = getLabel(index, 1, 0, 0);
+    labelBg00 = getLabel(index, 0, 0, 0);
+    
+    for y = 1:h
+        for x = 1:w
+            if (isInRoi(y, x, roi))
+                class(y,x) = labelFg00;
+            else
+                class(y,x) = labelBg00;
+            end
+        end
+    end  
+end
 
 function  [bool]  = isInRoi (y, x, roi)
     RoiULx = roi(1);
