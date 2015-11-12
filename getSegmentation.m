@@ -158,17 +158,23 @@ function class = createClass (image, roi, index)
                 class(y,x) = labelBg00;
             end
         end
-    end  
+    end
+    
+    %/!\ the vector cuts the image column wise and not row wize 
+    %Further check is needed to be sure it is according to GCMEX
+    %/!\
+    class = reshape (class, [], 1)';
 end
 
+%TODO : Make further tests (especially about < ou <=)
 function  [bool]  = isInRoi (y, x, roi)
     RoiULx = roi(1);
     RoiULy = roi(2);
     RoiWidth = roi(3);
     RoiHeight = roi(4);
     
-    if ( x >= RoiUlx && x <= RoiULx + RoiWidth )
-        if (y >= RoiUly && y <= RoiULy + RoiHeight)
+    if ( x >= RoiULx && x < RoiULx + RoiWidth )
+        if (y >= RoiULy && y < RoiULy + RoiHeight)    
             bool = true(1);
         else
             bool = false(1);
