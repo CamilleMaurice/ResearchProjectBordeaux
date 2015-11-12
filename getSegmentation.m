@@ -135,6 +135,15 @@ function index = createIndex()
  index = index(1:end -1, :);
 end
 
+%Distance is defined as the number of different informations between 2
+%labels. Max distance = 3; Min distance = 0 (if lp == lq)
+function distance = getDistanceBtwLabels ( lp, lq, index )
+    lp_info = index(lp,2:end);
+    lq_info = index(lq,2:end);
+    distance = sum(abs(lp_info - lq_info)); 
+end
+
+
 function result = SSDG (curr_patch, displaced_patch, gaussian)
 
 
