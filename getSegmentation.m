@@ -3,6 +3,7 @@ n_bins = 16;
 max_displacement = 2;
 window_omega = 6;
 std = 0.5;
+nLabels = 50;
 
 gaussian = fspecial('gaussian', window_omega, std);
 
@@ -15,14 +16,19 @@ bkg_region = getBkgRegion( roi, current_frame );
 [height,width,~] = size( current_frame );
 number_of_pixels = height*width;
 
-%TODO:LABELS DEFINITION
+%LABELS DEFINITION
 index = createIndex();
-labels = zeros(height, width,3);
+labelCost = createLabelCost(index);
+
+labels = zeros(height, width, 3);
+
+%O for bkg 1 for object
 segmentation_labels = labels(:,:,1);
-%O for bk 1 for fg
+
 displacement_labels = labels(:,:,2:3);
 
 %DATA TERM
+%
 %TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
 app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
 cpt = 1;
@@ -38,7 +44,6 @@ end
 
 %APPEARANCE MODEL
 %just check format with gc mex
-%Bkg region is 3 vectors : RGB!
 histoBkg = histo3D( bkg_region, n_bins );
 histoObj = histo3D( reshape( [object_region], [], 3 ), n_bins);
 
@@ -62,6 +67,7 @@ for j = 1 : height
     end
 end
 %%APPEARANCE MODEL DONE
+
 
 
 %TODO:SMOOTHNESS TERM spatial
@@ -135,6 +141,18 @@ function index = createIndex()
  index = index(1:end -1, :);
 end
 
+
+%Create a label cost matrix according to the format wanted by GCMEX.
+function labelCost = createLabelCost (index)
+    [nLabels, ~] = size (index); 
+    labelCost = zeros (nLabels, nLabels);
+    for lp = 1:nLabels
+        for lq = 1:nLabels
+            labelCost(lp,lq) = getDistanceBtwLabels(lp, lq, index);
+        end
+    end
+    
+end
 %Distance is defined as the number of different informations between 2
 %labels. Max distance = 3; Min distance = 0 (if lp == lq)
 function distance = getDistanceBtwLabels ( lp, lq, index )
