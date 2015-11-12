@@ -16,6 +16,7 @@ bkg_region = getBkgRegion( roi, current_frame );
 number_of_pixels = height*width;
 
 %TODO:LABELS DEFINITION
+index = createIndex();
 labels = zeros(height, width,3);
 segmentation_labels = labels(:,:,1);
 %O for bk 1 for fg
@@ -104,6 +105,34 @@ BkgD = reshape([BkgD], [], 3);
 BkgR = reshape([BkgR], [], 3);
 
 concatenatedImage = [BkgL; BkgU; BkgD ; BkgR] ;
+end
+
+function index = createIndex()
+    index = zeros(50,4);
+    for i = 1:1:50
+        index(i,1) = i;
+        %0 :: background, 1 :: object
+        if ( i < 26 )
+            index(i,2) = 0;
+        else
+            index(i,2) = 1;
+        end
+    end
+    dx = -2;
+    for i = 1:5:50
+        if ( i == 26 )
+            dx = -2;
+        end
+        cpt = 0;
+       for dy = -2:1:2
+        index(i+cpt,4) = dy;
+        cpt =cpt +1;
+       end
+       
+       index(i:i+5,3) = dx; 
+       dx = dx +1;
+    end
+ index = index(1:end -1, :);
 end
 
 function result = SSDG (curr_patch, displaced_patch, gaussian)
