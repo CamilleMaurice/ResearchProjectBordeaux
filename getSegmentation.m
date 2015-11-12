@@ -14,12 +14,13 @@ object_region = imcrop( current_frame, roi );
 bkg_region = getBkgRegion( roi, current_frame );
 
 [height,width,~] = size( current_frame );
-number_of_pixels = height*width;
+nPixels = height*width;
 
 %LABELS DEFINITION
 index = createIndex();
 labelCost = createLabelCost(index);
 
+class = zeros (1,nPixels);
 labels = zeros(height, width, 3);
 
 %O for bkg 1 for object
@@ -131,14 +132,59 @@ function index = createIndex()
         end
         cpt = 0;
        for dy = -2:1:2
-        index(i+cpt,4) = dy;
+        index(i+cpt, 4) = dy;
         cpt =cpt +1;
        end
        
-       index(i:i+5,3) = dx; 
+       index(i:i+5, 3) = dx; 
        dx = dx +1;
     end
  index = index(1:end -1, :);
+end
+
+%For initialization all dx, dy are set to 0, we choose the label
+%corresponding to bg/fg with displacement 00;
+% function class = createClass (image, roi, index)
+%     [h, w, ~] = size(image);
+%     class = zeros (h, w);
+%     for y = 1:h
+%         for x = 1:w
+%             if (isInRoi(y, x, roi))
+%                 class(y,x) = 
+%             else
+%         
+%     end
+% 
+%         end
+%     end
+% end
+
+function  [bool]  = isInRoi (y, x, roi)
+    RoiULx = roi(1);
+    RoiULy = roi(2);
+    RoiWidth = roi(3);
+    RoiHeight = roi(4);
+    
+    if ( x >= RoiUlx && x <= RoiULx + RoiWidth )
+        if (y >= RoiUly && y <= RoiULy + RoiHeight)
+            bool = true(1);
+        else
+            bool = false(1);
+        end
+    else
+        bool = false (1);
+    end
+
+end
+
+function label = getLabel (index, seg, dx, dy)
+%seg must be 0 or 1, dx and dy  btw -2:2 
+%add check here
+    i4 = find(index(:, 4) == dy);
+    i3 = find(index(:, 3) == dx);
+    i2 = find(index(:, 2) == seg);
+    label = intersect(i4, i3);
+    label = intersect(label, i2);    
 end
 
 
@@ -153,6 +199,7 @@ function labelCost = createLabelCost (index)
     end
     
 end
+
 %Distance is defined as the number of different informations between 2
 %labels. Max distance = 3; Min distance = 0 (if lp == lq)
 function distance = getDistanceBtwLabels ( lp, lq, index )
