@@ -1,4 +1,4 @@
-function binarySegmentationMask = getSegmentation(filename,roi)
+function binarySegmentationMask = getSegmentation(currFilename, prevFilename, roi)
 n_bins = 16;
 maxDisplacement = 2;
 windowOmega = 7;
@@ -9,7 +9,8 @@ gaussian = fspecial('gaussian', windowOmega, std);
 
 % addpath(genpath('maxflow-v3.0'));
 
-currentFrame = imread( filename );
+currentFrame = imread( currFilename );
+previousFrame = imread( prevFilename );
 objectRegion = imcrop( currentFrame, roi );
 bkgRegion = getBkgRegion( roi, currentFrame );
 
