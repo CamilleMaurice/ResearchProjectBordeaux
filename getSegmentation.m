@@ -1,20 +1,20 @@
 function binarySegmentationMask = getSegmentation(filename,roi)
 n_bins = 16;
-max_displacement = 2;
-window_omega = 6;
+maxDisplacement = 2;
+windowOmega = 7;
 std = 0.5;
 nLabels = 50;
 
-gaussian = fspecial('gaussian', window_omega, std);
+gaussian = fspecial('gaussian', windowOmega, std);
 
 % addpath(genpath('maxflow-v3.0'));
 
 currentFrame = imread( filename );
-object_region = imcrop( currentFrame, roi );
-bkg_region = getBkgRegion( roi, currentFrame );
+objectRegion = imcrop( currentFrame, roi );
+bkgRegion = getBkgRegion( roi, currentFrame );
 
-[height,width,~] = size( currentFrame );
-size = [height, width];
+[height, width, ~] = size(currentFrame);
+sizeIm = [height, width];
 nPixels = height*width;
 
 %LABELS DEFINITION
@@ -23,20 +23,17 @@ labelCost = createLabelCost(index);
 class = createClass(currentFrame, roi, index);
 
 %APPEARANCE MODEL - UNARY/DATA TERM
-histoBkg = histo3D( bkg_region, n_bins );
-histoObj = histo3D( reshape( [object_region], [], 3 ), n_bins);
-
-%TO DO : think if it woulnt be more coherent to set those probs in the
-%getApperanceModel.
+histoBkg = histo3D( bkgRegion, n_bins );
+histoObj = histo3D( reshape( objectRegion, [], 3 ), n_bins);
 
 %Compute Probabilities - normalize histograms
-probsObj = histoObj/size(reshape( [object_region], [], 3 ),1);
-probsBkg = histoBkg/size(bkg_region,1);
+probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
+probsBkg = histoBkg/size(bkgRegion,1);
 
 Unary = zeros ( nLabels, nPixels );
 UnaryMatrix = zeros( height, width, nLabels );
 for label = 1:nLabels
-   UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, window_omega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, size ) ;   
+   UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, sizeIm ) ;   
    Unary(label) = reshape (UnaryMatrix(:,:,label), [], 1);
 end
 %%APPEARANCE MODEL - UNARY/DATA TERM DONE
@@ -54,7 +51,7 @@ end
 
 
 
-reshape( [currentFrame], [], 1 );
+reshape( currentFrame, [], 1 );
 
 %TODO CALL GC MEX
 %gfet the labels
@@ -78,10 +75,10 @@ BkgD = imcrop(image,[RoiULx, RoiULy + RoiHeight + 1, RoiWidth-1, size_im(1)- (Ro
 BkgR = imcrop(image,[RoiULx+RoiWidth+1, 1, size_im(2)-(RoiULx + RoiWidth +1), size_im(1)]);
 
 %from matrix to vector;
-BkgL = reshape([BkgL], [], 3);
-BkgU = reshape([BkgU], [], 3);
-BkgD = reshape([BkgD], [], 3);
-BkgR = reshape([BkgR], [], 3);
+BkgL = reshape(BkgL, [], 3);
+BkgU = reshape(BkgU, [], 3);
+BkgD = reshape(BkgD, [], 3);
+BkgR = reshape(BkgR, [], 3);
 
 concatenatedImage = [BkgL; BkgU; BkgD ; BkgR] ;
 end
@@ -180,6 +177,15 @@ function labelCost = createLabelCost (index)
     
 end
 
+function [Window] =  getNeigborhoodWindow ( y, x,image, WindowSize )
+    half = floor(WindowSize/2);
+    Padded_img = padarray(image,[half, half ],-1);
+    x_pad = x + half;
+    y_pad = y + half;
+    %do padarray to control borders
+    Window = Padded_img(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
+end
+
 %Distance is defined as the number of different informations between 2
 %labels. Max distance = 3; Min distance = 0 (if lp == lq)
 function distance = getDistanceBtwLabels ( lp, lq, index )
@@ -188,27 +194,30 @@ function distance = getDistanceBtwLabels ( lp, lq, index )
     distance = sum(abs(lp_info - lq_info)); 
 end
 
-function score = getApperanceSimilarity( label, index, window_omega, currentFrame, previousFrame )
-%SCORE will actually be the matrix of scores    
-%TO DO PADARRAY both frame WITH 0
-%CREATE GAUSSIAN
-%Create CENTERED WINDOW IN EACH PIXEL
-%LOOP LIKE A SLIDING WINDOW
-%COMPUTE GSAD BETWEEN PATCHES (curr(+dx+dy according to label) and prev (OR
-%CURR AND NEXT THINK ABOUT THAT)
-label_info = index(lp,2:end);
+function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame )
+%score will actually be the matrix of scores   
+
+%BEWARE VARIABLES VISIBILITY
+%[height, width, ~] = size (currentFrame);
+
+label_info = index(label, 2:end);
+score = zeros(height, width);
 dx = label_info(2);
 dy = label_info(3);
-%currPadded = ;
-%prevPadded = ;
+gaussian = fspecial ( 'gaussian', [windowOmega, windowOmega], 0.5);
 
-
-    
+for y = 1:1:height
+    for x = 1:1:width
+        winCurr = getNeigborhoodWindow(y+dy, x+dx, currentFrame, window_omaga);
+        winPrev = getNeigborhoodWindow(y, x, previousFrame, window_omaga);
+        score(y,x) = GSAD ( winPrev, winCurr, gaussian );
+    end
+end
 end
 
-function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, size )
-    height = size(1);
-    width = size(2);
+function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg)
+    [height, width, ~] = size(currentFrame);
+    
     if ( sum(ismember(find(index(:,2)==0),label) ) )
         isBkg = true(1);
     else
@@ -249,45 +258,3 @@ end
 end
 
 
-%labels = zeros(height, width, 3);
-
-%O for bkg 1 for object
-% segmentation_labels = labels(:,:,1);
-% 
-% displacement_labels = labels(:,:,2:3);
-
-%DATA TERM
-%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
-% app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
-% 
-% for y = -max_displacement:max_displacement
-%     for x = -max_displacement:max_displacement
-%         label = getLabel(
-%         app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
-%         cpt = cpt +1;
-%     end
-%     
-% end
-%Need a function to create window around each pixel of the image.
-
-
-%labels = zeros(height, width, 3);
-
-%O for bkg 1 for object
-% segmentation_labels = labels(:,:,1);
-% 
-% displacement_labels = labels(:,:,2:3);
-
-%DATA TERM
-%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
-% app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
-% 
-% for y = -max_displacement:max_displacement
-%     for x = -max_displacement:max_displacement
-%         label = getLabel(
-%         app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
-%         cpt = cpt +1;
-%     end
-%     
-% end
-%Need a function to create window around each pixel of the image.
