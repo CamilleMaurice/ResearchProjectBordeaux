@@ -9,65 +9,37 @@ gaussian = fspecial('gaussian', window_omega, std);
 
 % addpath(genpath('maxflow-v3.0'));
 
-current_frame = imread( filename );
-object_region = imcrop( current_frame, roi );
-bkg_region = getBkgRegion( roi, current_frame );
+currentFrame = imread( filename );
+object_region = imcrop( currentFrame, roi );
+bkg_region = getBkgRegion( roi, currentFrame );
 
-[height,width,~] = size( current_frame );
+[height,width,~] = size( currentFrame );
+size = [height, width];
 nPixels = height*width;
 
 %LABELS DEFINITION
 index = createIndex();
 labelCost = createLabelCost(index);
+class = createClass(currentFrame, roi, index);
 
-class = zeros (1,nPixels);
-labels = zeros(height, width, 3);
-
-%O for bkg 1 for object
-segmentation_labels = labels(:,:,1);
-
-displacement_labels = labels(:,:,2:3);
-
-%DATA TERM
-%
-%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
-app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
-cpt = 1;
-for y = -max_displacement:max_displacement
-    for x = -max_displacement:max_displacement
-        app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
-        cpt = cpt +1;
-    end
-    
-end
-%Need a function to create window around each pixel of the image.
-
-
-%APPEARANCE MODEL
-%just check format with gc mex
+%APPEARANCE MODEL - UNARY/DATA TERM
 histoBkg = histo3D( bkg_region, n_bins );
 histoObj = histo3D( reshape( [object_region], [], 3 ), n_bins);
+
+%TO DO : think if it woulnt be more coherent to set those probs in the
+%getApperanceModel.
 
 %Compute Probabilities - normalize histograms
 probsObj = histoObj/size(reshape( [object_region], [], 3 ),1);
 probsBkg = histoBkg/size(bkg_region,1);
 
-U_fg = zeros(height, width, 1);
-U_bg = zeros(height, width, 1);
-%OPTIMIZE THIS
-% Rcolor = current_frame(:,:,1);cpde appearan
-% Gcolor = current_frame(:,:,2);
-% Bcolor = current_frame(:,:,3);
-for j = 1 : height
-    for i = 1 : width
-        Rcolor = floor(current_frame(j,i,1)/n_bins)+1;
-        Gcolor = floor(current_frame(j,i,2)/n_bins)+1;
-        Bcolor = floor(current_frame(j,i,3)/n_bins)+1;
-        U_fg(j,i) = -log (probsObj(Rcolor,Gcolor,Bcolor));  
-        U_bg(j,i) = -log (probsBkg(Rcolor,Gcolor,Bcolor));  
-    end
+Unary = zeros ( nLabels, nPixels );
+UnaryMatrix = zeros( height, width, nLabels );
+for label = 1:nLabels
+   UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, window_omega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, size ) ;   
+   Unary(label) = reshape (UnaryMatrix(:,:,label), [], 1);
 end
-%%APPEARANCE MODEL DONE
+%%APPEARANCE MODEL - UNARY/DATA TERM DONE
 
 
 
@@ -82,7 +54,7 @@ end
 
 
 
-reshape( [current_frame], [], 1 );
+reshape( [currentFrame], [], 1 );
 
 %TODO CALL GC MEX
 %gfet the labels
@@ -216,8 +188,93 @@ function distance = getDistanceBtwLabels ( lp, lq, index )
     distance = sum(abs(lp_info - lq_info)); 
 end
 
+function score = getApperanceSimilarity( label, index, window_omega, currentFrame, previousFrame )
 
-function result = SSDG (curr_patch, displaced_patch, gaussian)
+    
+end
 
+function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, size )
+    height = size(1);
+    width = size(2);
+    if ( sum(ismember(find(index(:,2)==0),label) ) )
+        isBkg = true(1);
+    else
+        isBkg = false(1);
+    end
+    
+    U_score = zeros(height, width, 1);
+    % TO DO : OPTIMIZE THIS BY THE CALL OF ANONYM FUNCTION OVER A MATRIX
+    for j = 1 : height
+        for i = 1 : width
+            %OPTIMIZE THIS
+            Rcolor = floor(currentFrame(j,i,1)/n_bins)+1;
+            Gcolor = floor(currentFrame(j,i,2)/n_bins)+1;
+            Bcolor = floor(currentFrame(j,i,3)/n_bins)+1;
+            
+            %If the label is BG
+            if ( isBkg )
+                U_score(j,i) = -log (probsBkg(Rcolor,Gcolor,Bcolor));
+            else
+                U_score(j,i) = -log (probsObj(Rcolor,Gcolor,Bcolor)); 
+            end
+        end
+    end
+end
+
+
+
+function result = GSAD (currPatch, displacedPatch, gaussian)
+%TO DO check if size of the curr_patch and displaced_patch is the same
+[h,w,~] = size(curr_patch);
+result = 0;
+for j = 1:h
+    for i = 1:w
+        result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
+    end
+end        
 
 end
+
+
+%labels = zeros(height, width, 3);
+
+%O for bkg 1 for object
+% segmentation_labels = labels(:,:,1);
+% 
+% displacement_labels = labels(:,:,2:3);
+
+%DATA TERM
+%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
+% app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
+% 
+% for y = -max_displacement:max_displacement
+%     for x = -max_displacement:max_displacement
+%         label = getLabel(
+%         app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
+%         cpt = cpt +1;
+%     end
+%     
+% end
+%Need a function to create window around each pixel of the image.
+
+
+%labels = zeros(height, width, 3);
+
+%O for bkg 1 for object
+% segmentation_labels = labels(:,:,1);
+% 
+% displacement_labels = labels(:,:,2:3);
+
+%DATA TERM
+%TODO:APPEARANCE SIMILARITY AS A FUNCTION OF the displacement
+% app_simil = zeros ( height, width, (2*max_displacement+1)^2 );
+% 
+% for y = -max_displacement:max_displacement
+%     for x = -max_displacement:max_displacement
+%         label = getLabel(
+%         app_simil(:,:,cpt) = getApperanceSimilarity( patch, displaced_patch );
+%         cpt = cpt +1;
+%     end
+%     
+% end
+%Need a function to create window around each pixel of the image.
