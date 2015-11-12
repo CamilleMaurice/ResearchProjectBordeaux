@@ -15,17 +15,20 @@ for fileNumber = 4:1:nFiles
     currFrame = strcat([folder, frameName]);
     
     labels = getSegmentation(currFrame, prevFrame, roi);
-    %TO DO: create a function from labels to roi, to update the roi.
+    roi =  fromLabelsToRoi ( labels )
     prevFrame = currFrame;
-
 end
 %DONE:in the loop call segmentation,
 %TODO:get roi
 %TODO:write file of segmented object
 %TODO:compute measures for each file
 %TODO:write a csv file with all measures
+end
 
-
-
+%TO DO: create a function from labels to roi, to update the roi.
+function roi = fromLabelsToRoi ( labels )
+%TO DO : get the UL coordinate of the obj.
+%Find the width of the obj
+%Find the height
 
 end
