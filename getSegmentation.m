@@ -1,16 +1,20 @@
-function binarySegmentationMask = getSegmentation(currFilename, prevFilename, roi)
+function binarySegmentationMask = getSegmentation(currentFrame, previousFrame, roi)
+lambda1=0.2;
+lambda2=0.2;
+lambda3=1;
+Ec=2;
 n_bins = 16;
-maxDisplacement = 2;
+maxDisplacement = 2;%in the paper they used 16
 windowOmega = 7;
+%should be renamed
 std = 0.5;
-nLabels = 50;
-
+nLabels = 2*(2*maxDisplacement+1)*(2*maxDisplacement+1);
 gaussian = fspecial('gaussian', windowOmega, std);
 
 % addpath(genpath('maxflow-v3.0'));
 
-currentFrame = imread( currFilename );
-previousFrame = imread( prevFilename );
+% currentFrame = imread( currFilename );
+% previousFrame = imread( prevFilename );
 objectRegion = imcrop( currentFrame, roi );
 bkgRegion = getBkgRegion( roi, currentFrame );
 
@@ -199,7 +203,7 @@ function score = getApperanceSimilarity( label, index, windowOmega, currentFrame
 %score will actually be the matrix of scores   
 
 %BEWARE VARIABLES VISIBILITY
-%[height, width, ~] = size (currentFrame);
+[height, width, ~] = size (currentFrame);
 
 label_info = index(label, 2:end);
 score = zeros(height, width);
