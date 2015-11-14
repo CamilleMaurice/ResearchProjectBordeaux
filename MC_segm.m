@@ -11,7 +11,7 @@ nFiles = size(filelist,1)-2;
 filelist.name;
 prevFrame = strcat([folder, first_frame]);
 prev_Im=imread(prevFrame);
-[h,w]=size(prev_Im);
+[h,w,~]=size(prev_Im)
 for fileNumber = 4:1:nFiles%WHY: the beginning at 4?
     frameName = filelist(fileNumber).name;
     currFrame = strcat([folder, frameName]);
@@ -25,6 +25,7 @@ for fileNumber = 4:1:nFiles%WHY: the beginning at 4?
     prev_Im = curr_Im;
     
     mask=fromLabelstoMask(labels, w, h);
+    figure(1)
     imshow(mask)
     roi =  fromMaskToRoi ( labels, w );
     %TODO:write file of mask and segmented object
