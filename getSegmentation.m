@@ -1,4 +1,4 @@
-function binarySegmentationMask = getSegmentation(currentFrame, previousFrame, roi)
+function [labels, binarySegmentationMask] = getSegmentation(currentFrame, previousFrame, roi)
 lambda1=0.2;
 lambda2=0.2;
 lambda3=1;
@@ -43,13 +43,13 @@ probsBkg = histoBkg/size(bkgRegion,1);
 % end
 %APPEARANCE MODEL - UNARY/DATA TERM DONE
 
-size(Unary)
+%CHECK: shouldn't unary be of size nLabels*nPixels?
 
-%TODO:SMOOTHNESS TERM spatial
+%DONE:SMOOTHNESS TERM spatial
 Spatial_Pairwise=zeros(nLabels,nLabels);
 
 %DONE:MOTION COHERENCE
-%for now we use SAD to comute distance 
+%for now we use SAD to compute distance 
 DxDy=index(1:nLabels/2,3:4);
 D=abs(DxDy(:,1)-DxDy(:,2));
 D_LpLq=zeros(nLabels/2,nLabels/2);
@@ -63,7 +63,7 @@ Spatial_Pairwise = [D_LpLq D_LpLq; D_LpLq D_LpLq];
 %DONE:ATTRIBUTE COHERENCE
 Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2) = Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2)+Ec;
 Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end) = Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end)+Ec;
-
+%SPATIAL SMOOTHNESS TERM DONE
 
 reshape( currentFrame, [], 1 );
 
@@ -71,7 +71,12 @@ reshape( currentFrame, [], 1 );
 %TODO CALL GC MEX
 %gfet the labels
 %TODO: construct the binary segmentation mask from the output labels
-
+%[labels, energy, energyafter] = ..
+labels=zeros(height,width);
+labels( 10:20,10:20)=1;
+   
+    binarySegmentationMask=fromLabelstoMask(labels, width, height);
+    roi =  fromMaskToRoi ( labels, width );
 end
 
 %returns the bckg pixels colors in a 1D vector
@@ -259,8 +264,6 @@ function U_score = getApperanceModel( label, index, currentFrame, probsObj, prob
     end
 end
 
-
-
 function result = GSAD (currPatch, displacedPatch, gaussian)
 %TO DO check if size of the curr_patch and displaced_patch is the same
 [h,w,~] = size(curr_patch);
@@ -270,6 +273,23 @@ for j = 1:h
         result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
     end
 end        
+
+end
+
+function roi = fromMaskToRoi ( mask, width )
+CC=bwconncomp(mask);
+numPixels = cellfun(@numel,CC.PixelIdxList);
+[biggest,idx] = max(numPixels);
+%[col row]=ind2sub(width,height);
+bb=regionprops(CC,'BoundingBox');%not good!! for several bb
+roi=[bb.BoundingBox(1:2)+0.5 bb.BoundingBox(3:4)];
+
+end
+
+function mask = fromLabelstoMask(labels,height,width)
+mask=zeros(height,width);
+med=max(max(labels))/2;
+mask(labels>med)=1;%TODO:CH:check the strict superiority
 
 end
 
