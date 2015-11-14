@@ -17,7 +17,7 @@ for fileNumber = 4:1:nFiles%WHY: the beginning at 4?
     currFrame = strcat([folder, frameName]);
     curr_Im=imread(currFrame);
     
-    %labels = getSegmentation(curr_Im, prev_Im, roi);
+    labels = getSegmentation(curr_Im, prev_Im, roi);
     %for testing
     labels = zeros(h,w);
     labels(2:4,2:10)=1;

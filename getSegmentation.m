@@ -34,30 +34,40 @@ histoObj = histo3D( reshape( objectRegion, [], 3 ), n_bins);
 %Compute Probabilities - normalize histograms
 probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
 probsBkg = histoBkg/size(bkgRegion,1);
+% 
+% Unary = zeros ( nLabels, nPixels );
+% UnaryMatrix = zeros( height, width, nLabels );
+% for label = 1:nLabels
+%    UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, sizeIm ) ;   
+%    Unary(label) = reshape (UnaryMatrix(:,:,label), [], 1);
+% end
+%APPEARANCE MODEL - UNARY/DATA TERM DONE
 
-Unary = zeros ( nLabels, nPixels );
-UnaryMatrix = zeros( height, width, nLabels );
-for label = 1:nLabels
-   UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, sizeIm ) ;   
-   Unary(label) = reshape (UnaryMatrix(:,:,label), [], 1);
-end
-%%APPEARANCE MODEL - UNARY/DATA TERM DONE
-
-
+size(Unary)
 
 %TODO:SMOOTHNESS TERM spatial
+Spatial_Pairwise=zeros(nLabels,nLabels);
 
-%TODO:MOTION COHERENCE
-%TODO:ATTRIBUTE COHERENCE
+%DONE:MOTION COHERENCE
+%for now we use SAD to comute distance 
+DxDy=index(1:nLabels/2,3:4);
+D=abs(DxDy(:,1)-DxDy(:,2));
+D_LpLq=zeros(nLabels/2,nLabels/2);
+for i=1:length(D)
+    K=D(i)+D;
+    D_LpLq(i,:)=K';
+end
+D_LpLq=lambda3*D_LpLq;
+Spatial_Pairwise = [D_LpLq D_LpLq; D_LpLq D_LpLq];
 
-%TODO: SAME WITH TEMPORAL NEIGHBORS
-%TODO:MOITON COHERENCE
-%TODO: ATTRIBUTE COHERENCE
-
+%DONE:ATTRIBUTE COHERENCE
+Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2) = Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2)+Ec;
+Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end) = Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end)+Ec;
 
 
 reshape( currentFrame, [], 1 );
 
+%TODO TUNE GCMEX FOR SMOOTHNESS TERM
 %TODO CALL GC MEX
 %gfet the labels
 %TODO: construct the binary segmentation mask from the output labels
@@ -89,6 +99,7 @@ concatenatedImage = [BkgL; BkgU; BkgD ; BkgR] ;
 end
 
 function index = createIndex()
+'creating index'
     index = zeros(50,4);
     for i = 1:1:50
         index(i,1) = i;
