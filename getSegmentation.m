@@ -35,7 +35,7 @@ histoObj = histo3D( reshape( objectRegion, [], 3 ), n_bins);
 probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
 probsBkg = histoBkg/size(bkgRegion,1);
 % 
-% Unary = zeros ( nLabels, nPixels );
+Unary = zeros ( nLabels,nPixels );
 % UnaryMatrix = zeros( height, width, nLabels );
 % for label = 1:nLabels
 %    UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, sizeIm ) ;   
@@ -71,12 +71,20 @@ reshape( currentFrame, [], 1 );
 %TODO CALL GC MEX
 %gfet the labels
 %TODO: construct the binary segmentation mask from the output labels
-%[labels, energy, energyafter] = ..
-labels=zeros(height,width);
-labels( 10:20,10:20)=1;
-   
-    binarySegmentationMask=fromLabelstoMask(labels, width, height);
-    roi =  fromMaskToRoi ( labels, width );
+nPixels
+size(class)
+size(Unary)
+Spatial_Pairwise=reshape(Spatial_Pairwise,[],1);
+size(Spatial_Pairwise)
+size(labelCost)
+% [labels, energy, energyafter] = GCMex(class', single(Unary), Spatial_Pairwise, single(labelCost),0,width,height);
+% labels=zeros(height,width);
+% labels( 10:20,10:20)=1;
+  display('the energy is')
+%   energy
+%    energyafter
+%     binarySegmentationMask=fromLabelstoMask(labels, width, height);
+%     roi =  fromMaskToRoi ( labels, width );
 end
 
 %returns the bckg pixels colors in a 1D vector

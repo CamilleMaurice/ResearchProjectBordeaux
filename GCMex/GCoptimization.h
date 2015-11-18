@@ -121,7 +121,8 @@ website:http://www.adastral.ucl.ac.uk/~vladkolm/software.html
 #include <memory.h>
 #include <stdio.h>
 #include <limits.h>
-
+#include <cstdlib>
+#include <iostream>
 #ifdef _MSC_EXTENSIONS
 #define OLGA_INLINE __forceinline
 #else
@@ -306,6 +307,7 @@ protected:
 	struct SmoothCostFnFromArray {
 		SmoothCostFnFromArray(EnergyTermType* theArray, LabelID num_labels)
 			: m_array(theArray), m_num_labels(num_labels){}
+         //   std::cout<<"computing smooth cost fn from array"<<std::endl;
 		OLGA_INLINE EnergyTermType compute(SiteID s1, SiteID s2, LabelID l1, LabelID l2){return m_array[l1*m_num_labels+l2];}
 	private:
 		const EnergyTermType* const m_array;
@@ -463,8 +465,9 @@ void GCoptimization::specializeDataCostFunctor(const UserFunctor f) {
 template <typename UserFunctor>
 void GCoptimization::specializeSmoothCostFunctor(const UserFunctor f) {
 	if ( m_smoothcostFn ) handleError("Smoothness Costs are already initialized");
-
-	m_smoothcostFn = new UserFunctor(f);
+    
+std::cout<<"launching smooth cost in gc opti.h"<<std::endl;
+	  m_smoothcostFn = new UserFunctor(f);
 	m_smoothcostFnDelete       = &GCoptimization::deleteFunctor<UserFunctor>;
 	m_giveSmoothEnergyInternal = &GCoptimization::giveSmoothEnergyInternal<UserFunctor>;
 	m_set_up_n_links_expansion = &GCoptimization::set_up_n_links_expansion<UserFunctor>;

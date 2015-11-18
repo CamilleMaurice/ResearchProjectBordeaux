@@ -17,9 +17,10 @@ for fileNumber = 4:1:nFiles%WHY: the beginning at 4?
     frameName = filelist(fileNumber).name;
     currFrame = strcat([folder, frameName]);
     curr_Im=imread(currFrame);
-    
+    tic
     [labels, binaryMask ] = getSegmentation(curr_Im, prev_Im, roi);
-    
+    toc
+    imshow(binaryMask);
     prev_Im = curr_Im;
  
     %TODO:write file of mask and segmented object
