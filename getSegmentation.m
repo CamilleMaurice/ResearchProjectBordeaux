@@ -63,6 +63,9 @@ Spatial_Pairwise = [D_LpLq D_LpLq; D_LpLq D_LpLq];
 %DONE:ATTRIBUTE COHERENCE
 Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2) = Spatial_Pairwise(nLabels/2+1:end,1:nLabels/2)+Ec;
 Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end) = Spatial_Pairwise(1:nLabels/2,nLabels/2+1:end)+Ec;
+%fitting the smooth term init
+Spatial_Pairwise=reshape(Spatial_Pairwise,[],1);
+
 %SPATIAL SMOOTHNESS TERM DONE
 
 reshape( currentFrame, [], 1 );
@@ -71,16 +74,15 @@ reshape( currentFrame, [], 1 );
 %TODO CALL GC MEX
 %gfet the labels
 %TODO: construct the binary segmentation mask from the output labels
-nPixels
-size(class)
-size(Unary)
-Spatial_Pairwise=reshape(Spatial_Pairwise,[],1);
-size(Spatial_Pairwise)
-size(labelCost)
+% nPixels
+% size(class)
+% size(Unary)
+% size(Spatial_Pairwise)
+% size(labelCost)
 % [labels, energy, energyafter] = GCMex(class', single(Unary), Spatial_Pairwise, single(labelCost),0,width,height);
 % labels=zeros(height,width);
 % labels( 10:20,10:20)=1;
-  display('the energy is')
+%   display('the energy is')
 %   energy
 %    energyafter
 %     binarySegmentationMask=fromLabelstoMask(labels, width, height);
