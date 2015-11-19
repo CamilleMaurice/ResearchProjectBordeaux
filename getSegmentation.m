@@ -35,12 +35,23 @@ histoObj = histo3D( reshape( objectRegion, [], 3 ), n_bins);
 probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
 probsBkg = histoBkg/size(bkgRegion,1);
 % 
+disp ('begin appearance model')
+tic
 Unary = zeros ( nLabels,nPixels );
-% UnaryMatrix = zeros( height, width, nLabels );
-% for label = 1:nLabels
-%    UnaryMatrix(:,:,label) = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame ) + getApperanceModel( label, index, currentFrame, probsObj, probsBkg, sizeIm ) ;   
-%    Unary(label) = reshape (UnaryMatrix(:,:,label), [], 1);
-% end
+UnaryMatrix = zeros( height, width, nLabels );
+for label = 1:nLabels
+    tic
+    label
+     
+     score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
+     score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
+   
+   UnaryMatrix(:,:,label) = score1 + score2 ;   
+   Unary(label, :) = reshape (UnaryMatrix(:,:,label), [], 1)';
+   toc
+end
+toc
+disp (' appearance model done')
 %APPEARANCE MODEL - UNARY/DATA TERM DONE
 
 %CHECK: shouldn't unary be of size nLabels*nPixels?
@@ -208,13 +219,15 @@ function labelCost = createLabelCost (index)
     
 end
 
-function [Window] =  getNeigborhoodWindow ( y, x,image, WindowSize )
+function [Window] =  getNeigborhoodWindow ( y, x,image, WindowSize, maxDisplacement )
+
     half = floor(WindowSize/2);
-    Padded_img = padarray(image,[half, half ],-1);
-    x_pad = x + half;
-    y_pad = y + half;
-    %do padarray to control borders
-    Window = Padded_img(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
+    padSz = half + maxDisplacement;
+    PaddedImg = padarray(image,[padSz, padSz],0);
+    x_pad = x + padSz ;
+    y_pad = y + padSz ;
+    %do padarray to co ntrol borders
+    Window = PaddedImg(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
 end
 
 %Distance is defined as the number of different informations between 2
@@ -225,7 +238,7 @@ function distance = getDistanceBtwLabels ( lp, lq, index )
     distance = sum(abs(lp_info - lq_info)); 
 end
 
-function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame )
+function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement )
 %score will actually be the matrix of scores   
 
 %BEWARE VARIABLES VISIBILITY
@@ -239,14 +252,18 @@ gaussian = fspecial ( 'gaussian', [windowOmega, windowOmega], 0.5);
 
 for y = 1:1:height
     for x = 1:1:width
-        winCurr = getNeigborhoodWindow(y+dy, x+dx, currentFrame, window_omaga);
-        winPrev = getNeigborhoodWindow(y, x, previousFrame, window_omaga);
+        
+        winCurr = getNeigborhoodWindow(y+dy, x+dx, currentFrame, windowOmega, maxDisplacement);
+        winPrev = getNeigborhoodWindow(y, x, previousFrame, windowOmega, maxDisplacement);
         score(y,x) = GSAD ( winPrev, winCurr, gaussian );
+    end
+    if mod(y,10) == 0
+        y
     end
 end
 end
 
-function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg)
+function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg,n_bins )
     [height, width, ~] = size(currentFrame);
     
     if ( sum(ismember(find(index(:,2)==0),label) ) )
@@ -276,13 +293,14 @@ end
 
 function result = GSAD (currPatch, displacedPatch, gaussian)
 %TO DO check if size of the curr_patch and displaced_patch is the same
-[h,w,~] = size(curr_patch);
-result = 0;
-for j = 1:h
-    for i = 1:w
-        result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
-    end
-end        
+[h,w,~] = size(currPatch);
+img = abs(currPatch - displacedPatch);
+result = sum(sum(filter2(gaussian, img)));
+% for j = 1:h
+%     for i = 1:w
+%         result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
+%     end
+% end        
 
 end
 
