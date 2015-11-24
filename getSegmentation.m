@@ -43,10 +43,10 @@ for label = 1:nLabels
     tic
     label
      
-     score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
-     score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
+%      score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
+%      score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
    
-   UnaryMatrix(:,:,label) = score1 + score2 ;   
+   UnaryMatrix(:,:,label) = 0;%score1 + score2 ;   
    Unary(label, :) = reshape (UnaryMatrix(:,:,label), [], 1)';
    toc
 end
@@ -90,14 +90,14 @@ reshape( currentFrame, [], 1 );
 % size(Unary)
 % size(Spatial_Pairwise)
 % size(labelCost)
-% [labels, energy, energyafter] = GCMex(class', single(Unary), Spatial_Pairwise, single(labelCost),0,width,height);
+[labels, energy, energyafter] = GCMex(class', single(Unary), Spatial_Pairwise, single(labelCost),0,width,height);
 % labels=zeros(height,width);
 % labels( 10:20,10:20)=1;
 %   display('the energy is')
-%   energy
-%    energyafter
-%     binarySegmentationMask=fromLabelstoMask(labels, width, height);
-%     roi =  fromMaskToRoi ( labels, width );
+  energy
+   energyafter
+    binarySegmentationMask=fromLabelstoMask(labels, width, height);
+    roi =  fromMaskToRoi ( labels, width );
 end
 
 %returns the bckg pixels colors in a 1D vector
