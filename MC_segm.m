@@ -1,7 +1,7 @@
 % controller
 function z = MC_segm(folder,first_frame,roi,method)
 disp('beginning initialization');
-
+addpath(genpath('GCMex/'));
 % DONE: iterate through all frames
 dname = first_frame;
 filelist = dir(folder);
