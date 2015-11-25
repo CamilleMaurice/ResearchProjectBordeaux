@@ -123,35 +123,36 @@ BkgR = reshape(BkgR, [], 3);
 
 concatenatedImage = [BkgL; BkgU; BkgD ; BkgR] ;
 end
-
-function index = createIndex()
+function index = createIndex( maxDisplacement )
 'creating index'
-    index = zeros(50,4);
-    for i = 1:1:50
+    TotLabels = 2*(maxDisplacement*2+1) * (maxDisplacement*2+1);
+    index = zeros(TotLabels,4);
+    for i = 1:1:TotLabels
         index(i,1) = i;
         %0 :: background, 1 :: object
-        if ( i < 26 )
+        if ( i < TotLabels/2 +1 )
             index(i,2) = 0;
         else
             index(i,2) = 1;
         end
     end
-    dx = -2;
-    for i = 1:5:50
-        if ( i == 26 )
-            dx = -2;
+    dx = -maxDisplacement;
+    for i = 1:2*maxDisplacement+1:TotLabels
+        
+        if ( i == TotLabels/2 +1  )
+            dx = -maxDisplacement;
         end
         cpt = 0;
-       for dy = -2:1:2
+       for dy = -maxDisplacement:1:maxDisplacement
         index(i+cpt, 4) = dy;
         cpt =cpt +1;
-       end
-       
-       index(i:i+5, 3) = dx; 
+       end       
+       index(i:i+2*maxDisplacement+1, 3) = dx; 
        dx = dx +1;
     end
  index = index(1:end -1, :);
 end
+
 
 % For initialization all dx, dy are set to 0, we choose the label
 % corresponding to bg/fg with displacement 00;
