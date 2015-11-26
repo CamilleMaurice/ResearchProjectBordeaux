@@ -45,12 +45,10 @@ Unary = zeros ( nLabels,nPixels );
 UnaryMatrix = zeros( height, width, nLabels );
 for label = 1:nLabels
     
-    label
-     
-%      score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
-%      score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
-   
-   UnaryMatrix(:,:,label) = 0;%score1 + score2 ;   
+   score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
+   score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
+
+   UnaryMatrix(:,:,label) = double(score1) + score2 ;   
    Unary(label, :) = reshape (UnaryMatrix(:,:,label), [], 1)';
    
 end
@@ -184,6 +182,21 @@ function labelCost = createLabelCost ( indexObj )
     end    
 end
 
+%Create a displaced image along a given direction
+function imgD = displaceImage ( img, maxD, dy, dx )
+    paddedImg = padarray( img,[maxD, maxD], 'replicate' );
+    imgD = paddedImg( maxD+1 +dy:end-maxD +dy, maxD+dx+1:end-maxD+dx, : ); 
+end
+
+%Compute the integralImage to fasten computation
+function res = integralImage ( img )
+    RChannel = img(:,:,1); GChannel = img(:,:,2); BChannel = img(:,:,3);
+    resR = cumsum(cumsum(RChannel')');
+    resG = cumsum(cumsum(GChannel')');
+    resB = cumsum(cumsum(BChannel')');
+    res = resR + resG + resB;
+end
+
 function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplacement )
 
     half = floor(WindowSize/2);
@@ -206,19 +219,23 @@ label_info = index(label, 2:end);
 score = zeros(height, width);
 dx = label_info(2);
 dy = label_info(3);
-gaussian = fspecial ( 'gaussian', [windowOmega, windowOmega], 0.5);
 
-for y = 1:1:height
-    for x = 1:1:width
-        
-        winCurr = getNeigborhoodWindow(y+dy, x+dx, currentFrame, windowOmega, maxDisplacement);
-        winPrev = getNeigborhoodWindow(y, x, previousFrame, windowOmega, maxDisplacement);
-        score(y,x) = GSAD ( winPrev, winCurr, gaussian );
-    end
-    if mod(y,10) == 0
-        y
-    end
-end
+currentFrameDisplaced = displaceImage( currentFrame, maxDisplacement, dy, dx);
+currentFrameDisplacedIntegral = integralImage( double (currentFrameDisplaced) );
+previousFrameIntegral = integralImage( double(previousFrame) );
+score = abs(currentFrameDisplaced - previousFrame);
+score = score(:,:,1) + score (:,:,2) + score(:,:,3);
+%gaussian = fspecial ( 'gaussian', [windowOmega, windowOmega], 0.5);
+%  for y = 1:windowOmega:height
+%      for x = 1:windowOmega:width   
+%           
+%           winCurr = getNeigborhoodWindow(y, x, abs(currentFrameDisplacedIntegral-previousFrameIntegral), windowOmega, maxDisplacement);
+%           score(y:y+windowOmega,x:x+windowOmega) = winCurr(1,1) + winCurr(windowOmega, windowOmega) - winCurr(1, windowOmega) - winCurr(windowOmega, 1);
+%             
+%      end   
+%  end
+
+
 end
 
 function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg,n_bins )
@@ -249,18 +266,19 @@ function U_score = getApperanceModel( label, index, currentFrame, probsObj, prob
     end
 end
 
-function result = GSAD (currPatch, displacedPatch, gaussian)
-%TO DO check if size of the curr_patch and displaced_patch is the same
-[h,w,~] = size(currPatch);
-img = abs(currPatch - displacedPatch);
-result = sum(sum(filter2(gaussian, img)));
-% for j = 1:h
-%     for i = 1:w
-%         result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
-%     end
-% end        
 
-end
+% function result = GSAD (currPatch, displacedPatch, gaussian)
+% %TO DO check if size of the curr_patch and displaced_patch is the same
+% [h,w,~] = size(currPatch);
+% img = abs(currPatch - displacedPatch);
+% result = sum(sum(filter2(gaussian, img)));
+% % for j = 1:h
+% %     for i = 1:w
+% %         result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
+% %     end
+% % end        
+% 
+% end
 
 function roi = fromMaskToRoi ( mask, width )
 CC=bwconncomp(mask);
