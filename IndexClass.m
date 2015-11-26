@@ -42,13 +42,23 @@ classdef IndexClass
         index = index(1:end -1, :);
         end
          
-        function label = getLabel (obj, seg, dx, dy)
-         index1 = obj.index;
-         i4 = find(index1(:, 4) == dy);
-         i3 = find(index1(:, 3) == dx);
-         i2 = find(index1(:, 2) == seg);
-         label = intersect(i4, i3);
-         label = intersect(label, i2);    
+        function label = getLabel ( obj, seg, dx, dy )
+            index1 = obj.index;
+            i4 = find(index1(:, 4) == dy);
+            i3 = find(index1(:, 3) == dx);
+            i2 = find(index1(:, 2) == seg);
+            label = intersect(i4, i3);
+            label = intersect(label, i2);    
+        end
+        
+        %Distance is defined as the number of different informations between 2
+        %labels. Max distance = 3; Min distance = 0 (if lp == lq)
+        %TODO : ADD WEIGHT
+        function distance = getDistanceBtwLabels ( obj, lp, lq )
+            index1 = obj.index;
+            lp_info = index1(lp, 2:end);
+            lq_info = index1(lq, 2:end);
+            distance = sum( abs( lp_info - lq_info)); 
         end
    end
 end

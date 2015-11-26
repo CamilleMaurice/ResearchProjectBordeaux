@@ -28,7 +28,7 @@ nPixels = height*width;
 indexObj = IndexClass(maxDisplacement);
 index = indexObj.index;
 %nLabels = size(index, 1)
-labelCost = createLabelCost(index);
+labelCost = createLabelCost(indexObj);
 class = createClass(currentFrame, roi, indexObj);
 
 %APPEARANCE MODEL - UNARY/DATA TERM
@@ -172,13 +172,14 @@ function  [bool]  = isInRoi (y, x, roi)
 end
 
 %Create a label cost matrix according to the format wanted by GCMEX.
-function labelCost = createLabelCost (index)
+function labelCost = createLabelCost ( indexObj )
+    index = indexObj.index;
     nLabels = size (index, 1); 
     
     labelCost = zeros (nLabels, nLabels);
     for lp = 1:nLabels
         for lq = 1:nLabels
-            labelCost(lp,lq) = getDistanceBtwLabels(lp, lq, index);
+            labelCost(lp,lq) = getDistanceBtwLabels( indexObj, lp, lq );
         end
     end    
 end
@@ -194,14 +195,6 @@ function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplace
     Window = PaddedImg(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
 end
 
-%Distance is defined as the number of different informations between 2
-%labels. Max distance = 3; Min distance = 0 (if lp == lq)
-%TODO : ADD WEIGHT
-function distance = getDistanceBtwLabels ( lp, lq, index )
-    lp_info = index(lp, 2:end);
-    lq_info = index(lq, 2:end);
-    distance = sum( abs( lp_info - lq_info)); 
-end
 
 function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement )
 %score will actually be the matrix of scores   
