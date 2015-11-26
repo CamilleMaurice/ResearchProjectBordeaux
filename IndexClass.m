@@ -11,7 +11,7 @@ classdef IndexClass
         function index = createIndex( obj )  
             maxDisplacement = obj.maxDisp;
          %'creating index'
-            maxDisplacement
+            maxDisplacement;
             TotLabels = 2*(maxDisplacement*2+1) * (maxDisplacement*2+1);
             index = zeros(TotLabels,4);
             for i = 1:1:TotLabels
@@ -41,15 +41,15 @@ classdef IndexClass
         end
         index = index(1:end -1, :);
         end
-%         
-%        function label = getLabel (index, seg, dx, dy)
-%         
-%         i4 = find(index(:, 4) == dy);
-%         i3 = find(index(:, 3) == dx);
-%         i2 = find(index(:, 2) == seg);
-%         label = intersect(i4, i3);
-%         label = intersect(label, i2);    
-%         end
+         
+        function label = getLabel (obj, seg, dx, dy)
+         index1 = obj.index;
+         i4 = find(index1(:, 4) == dy);
+         i3 = find(index1(:, 3) == dx);
+         i2 = find(index1(:, 2) == seg);
+         label = intersect(i4, i3);
+         label = intersect(label, i2);    
+        end
    end
 end
 
