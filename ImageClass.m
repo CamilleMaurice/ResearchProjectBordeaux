@@ -49,13 +49,17 @@ classdef ImageClass
                     region = obj.bgVector;
               elseif (strcmp(type ,'fg') == 1 )
                       region = obj.fgVector;
-              end
+              else
                   disp('Usage error, type must be either fg or bg')                  
+              end
               histo = histo3D( region, nbins );
               probs = histo/size( region, 1 );              
           end
+          
           %Returns true is the coordinate (y,x) is inside the ROI, else false.
-          function  [bool]  = isInRoi (y, x, obj)
+          %TODO : Make further tests (especially about < ou <=)
+          function  [bool]  = isInRoi (obj, y, x)
+              
               roi = obj.rect;
               RoiULx = roi(1);
               RoiULy = roi(2);
@@ -81,3 +85,26 @@ classdef ImageClass
           end
     end
 end
+
+
+
+
+% %Compute the integralImage to fasten computation
+% function res = integralImage ( img )
+%     RChannel = img(:,:,1); GChannel = img(:,:,2); BChannel = img(:,:,3);
+%     resR = cumsum(cumsum(RChannel')');
+%     resG = cumsum(cumsum(GChannel')');
+%     resB = cumsum(cumsum(BChannel')');
+%     res = resR + resG + resB;
+% end
+% 
+% function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplacement )
+% 
+%     half = floor(WindowSize/2);
+%     padSz = half + maxDisplacement;
+%     PaddedImg = padarray(image,[padSz, padSz],0);
+%     x_pad = x + padSz ;
+%     y_pad = y + padSz ;
+%     %do padarray to co ntrol borders
+%     Window = PaddedImg(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
+% end

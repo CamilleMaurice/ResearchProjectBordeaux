@@ -15,11 +15,12 @@ gaussian = fspecial('gaussian', windowOmega, std);
 
 % currentFrame = imread( currFilename );
 % previousFrame = imread( prevFilename );
-objectRegion = imcrop( currentFrame, roi );
-bkgRegion = getBkgRegion( roi, currentFrame );
+imageObj = ImageClass(currentFrame, roi);
+
+% objectRegion = imcrop( currentFrame, roi );
+% bkgRegion = getBkgRegion( roi, currentFrame );
 
 [height, width, ~] = size(currentFrame);
-sizeIm = [height, width];
 nPixels = height*width;
 
 %LABELS DEFINITION
@@ -27,24 +28,22 @@ nPixels = height*width;
 
 indexObj = IndexClass(maxDisplacement);
 index = indexObj.index;
-%nLabels = size(index, 1)
+nLabels = size(index, 1);
 labelCost = createLabelCost(indexObj);
-class = createClass(currentFrame, roi, indexObj);
+class = createClass(imageObj, indexObj);
 
 %APPEARANCE MODEL - UNARY/DATA TERM
-histoBkg = histo3D( bkgRegion, n_bins );
-histoObj = histo3D( reshape( objectRegion, [], 3 ), n_bins);
 
 %Compute Probabilities - normalize histograms
-probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
-probsBkg = histoBkg/size(bkgRegion,1);
-% 
+probsObj = getProbabilities(imageObj,'fg',n_bins);
+probsBkg = getProbabilities(imageObj,'bg',n_bins);
+
 disp ('begin appearance model')
 Unary = zeros ( nLabels,nPixels );
 UnaryMatrix = zeros( height, width, nLabels );
 for label = 1:nLabels
     
-   score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement, gaussian );
+   score1 = getApperanceSimilarity( label, indexObj, imageObj, gaussian, previousFrame );
    score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
 
    UnaryMatrix(:,:,label) = double(score1) + score2 ;   
@@ -54,7 +53,8 @@ end
 disp (' appearance model done')
 %APPEARANCE MODEL - UNARY/DATA TERM DONE
 
-%CHECK: shouldn't unary be of size nLabels*nPixels?
+%CHECK: shouldn't unary be of size nLabels*nPixels? 
+%It must be nLabels*nbPixels :)
 
 %DONE:SMOOTHNESS TERM spatial
 Spatial_Pairwise=zeros(nLabels,nLabels);
@@ -100,41 +100,18 @@ reshape( currentFrame, [], 1 );
     roi =  fromMaskToRoi ( labels, width );
 end
 
-%returns the bckg pixels colors in a 1D vector
-function concatenatedImage = getBkgRegion(roi, image)
-%This function has been unary tested
-%Size of the image = size of the backgorund + size of the object
-size_im = size(image);
-RoiULx = roi(1);
-RoiULy = roi(2);
-RoiWidth = roi(3);
-RoiHeight = roi(4);
-
-BkgL = imcrop(image,[1, 1, RoiULx-1, size_im(1)]);
-BkgU = imcrop(image,[RoiULx, 1, RoiWidth-1, RoiULy-1]);
-BkgD = imcrop(image,[RoiULx, RoiULy + RoiHeight + 1, RoiWidth-1, size_im(1)- (RoiULy + RoiHeight +1)]);
-BkgR = imcrop(image,[RoiULx+RoiWidth+1, 1, size_im(2)-(RoiULx + RoiWidth +1), size_im(1)]);
-
-%from matrix to vector;
-BkgL = reshape(BkgL, [], 3);
-BkgU = reshape(BkgU, [], 3);
-BkgD = reshape(BkgD, [], 3);
-BkgR = reshape(BkgR, [], 3);
-
-concatenatedImage = [BkgL; BkgU; BkgD ; BkgR] ;
-end
-
 % For initialization all dx, dy are set to 0, we choose the label
 % corresponding to bg/fg with displacement 00;
-function class = createClass (image, roi, indexObj)
-    [h, w, ~] = size(image);
+function class = createClass (imageObj, indexObj)
+    imagetest = imageObj.image;
+    [h, w, ~] = size(imagetest);
     class = zeros (h, w);
     labelFg00 = getLabel(indexObj, 1, 0, 0);
     labelBg00 = getLabel(indexObj, 0, 0, 0);
     
     for y = 1:h
         for x = 1:w
-            if (isInRoi(y, x, roi))
+            if (isInRoi(imageObj, y, x))
                 class(y,x) = labelFg00;
             else
                 class(y,x) = labelBg00;
@@ -146,25 +123,6 @@ function class = createClass (image, roi, indexObj)
     %Further check is needed to be sure it is according to GCMEX
     %/!\
     class = reshape (class, [], 1)';
-end
-
-%TODO : Make further tests (especially about < ou <=)
-function  [bool]  = isInRoi (y, x, roi)
-    RoiULx = roi(1);
-    RoiULy = roi(2);
-    RoiWidth = roi(3);
-    RoiHeight = roi(4);
-    
-    if ( x >= RoiULx && x < RoiULx + RoiWidth )
-        if (y >= RoiULy && y < RoiULy + RoiHeight)    
-            bool = true(1);
-        else
-            bool = false(1);
-        end
-    else
-        bool = false (1);
-    end
-
 end
 
 %Create a label cost matrix according to the format wanted by GCMEX.
@@ -180,65 +138,27 @@ function labelCost = createLabelCost ( indexObj )
     end    
 end
 
-%Create a displaced image along a given direction
-function imgD = displaceImage ( img, maxD, dy, dx )
-    paddedImg = padarray( img,[maxD, maxD], 'replicate' );
-    imgD = paddedImg( maxD+1 +dy:end-maxD +dy, maxD+dx+1:end-maxD+dx, : ); 
-end
-
-%Compute the integralImage to fasten computation
-function res = integralImage ( img )
-    RChannel = img(:,:,1); GChannel = img(:,:,2); BChannel = img(:,:,3);
-    resR = cumsum(cumsum(RChannel')');
-    resG = cumsum(cumsum(GChannel')');
-    resB = cumsum(cumsum(BChannel')');
-    res = resR + resG + resB;
-end
-
-function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplacement )
-
-    half = floor(WindowSize/2);
-    padSz = half + maxDisplacement;
-    PaddedImg = padarray(image,[padSz, padSz],0);
-    x_pad = x + padSz ;
-    y_pad = y + padSz ;
-    %do padarray to co ntrol borders
-    Window = PaddedImg(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
-end
-
-
-function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement, gaussian )
+function score = getApperanceSimilarity( label, indexObj, imageObj, gaussian, previousFrame )
 %score will actually be the matrix of scores   
 
-%BEWARE VARIABLES VISIBILITY
+index = indexObj.index;
+maxDisplacement = indexObj.maxDisp;
+currentFrame = imageObj.image;
+
 [height, width, ~] = size (currentFrame);
+score = zeros(height, width, 3);
 
 label_info = index(label, 2:end);
-score = zeros(height, width, 3);
 dx = label_info(2);
 dy = label_info(3);
 
-currentFrameDisplaced = displaceImage( currentFrame, maxDisplacement, dy, dx);
-%currentFrameDisplacedIntegral = integralImage( double (currentFrameDisplaced) );
-%previousFrameIntegral = integralImage( double(previousFrame) );
+currentFrameDisplaced = displaceImage( imageObj, maxDisplacement, dy, dx );
 
 score(:,:,1) = abs(conv2 (double(currentFrameDisplaced(:,:,1)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,1)),double (gaussian), 'same'));
 score(:,:,2) = abs(conv2 (double(currentFrameDisplaced(:,:,2)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,2)),double (gaussian), 'same'));
 score(:,:,3) = abs(conv2 (double(currentFrameDisplaced(:,:,3)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,3)),double (gaussian), 'same'));
-%score = abs(currentFrameDisplaced - previousFrame);
-%size(score)
-%pause(10)
+
 score = score(:,:,1) + score (:,:,2) + score(:,:,3);
-% for y = 1:windowOmega:height
-%       for x = 1:windowOmega:width   
-%            tic
-%            winCurr = getNeigborhoodWindow(y, x, abs(currentFrameDisplacedIntegral-previousFrameIntegral), windowOmega, maxDisplacement);
-%            score(y:y+windowOmega,x:x+windowOmega) = winCurr(1,1) + winCurr(windowOmega, windowOmega) - winCurr(1, windowOmega) - winCurr(windowOmega, 1);
-%            toc
-%       end   
-% end
-
-
 end
 
 function U_score = getApperanceModel( label, index, currentFrame, probsObj, probsBkg,n_bins )
@@ -261,27 +181,13 @@ function U_score = getApperanceModel( label, index, currentFrame, probsObj, prob
             
             %If the label is BG
             if ( isBkg )
-                U_score(j,i) = -log (probsBkg(Rcolor,Gcolor,Bcolor));
+                U_score(j,i) = -log (probsBkg(Rcolor,Gcolor,Bcolor) +eps);
             else
-                U_score(j,i) = -log (probsObj(Rcolor,Gcolor,Bcolor)); 
+                U_score(j,i) = -log (probsObj(Rcolor,Gcolor,Bcolor) +eps); 
             end
         end
     end
 end
-
-
-% function result = GSAD (currPatch, displacedPatch, gaussian)
-% %TO DO check if size of the curr_patch and displaced_patch is the same
-% [h,w,~] = size(currPatch);
-% img = abs(currPatch - displacedPatch);
-% result = sum(sum(filter2(gaussian, img)));
-% % for j = 1:h
-% %     for i = 1:w
-% %         result = result + gaussian(j,i) * abs(currPatch(j,i) - displacedPatch(j,i));
-% %     end
-% % end        
-% 
-% end
 
 function roi = fromMaskToRoi ( mask, width )
 CC=bwconncomp(mask);
@@ -299,5 +205,3 @@ med=max(max(labels))/2;
 mask(labels>med)=1;%TODO:CH:check the strict superiority
 
 end
-
-
