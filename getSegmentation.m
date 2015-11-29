@@ -40,19 +40,17 @@ probsObj = histoObj/size(reshape( objectRegion, [], 3 ),1);
 probsBkg = histoBkg/size(bkgRegion,1);
 % 
 disp ('begin appearance model')
-
 Unary = zeros ( nLabels,nPixels );
 UnaryMatrix = zeros( height, width, nLabels );
 for label = 1:nLabels
     
-   score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement );
+   score1 = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement, gaussian );
    score2 = getApperanceModel( label, index, currentFrame, probsObj, probsBkg, n_bins);
 
    UnaryMatrix(:,:,label) = double(score1) + score2 ;   
    Unary(label, :) = reshape (UnaryMatrix(:,:,label), [], 1)';
    
 end
-
 disp (' appearance model done')
 %APPEARANCE MODEL - UNARY/DATA TERM DONE
 
@@ -209,31 +207,36 @@ function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplace
 end
 
 
-function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement )
+function score = getApperanceSimilarity( label, index, windowOmega, currentFrame, previousFrame, maxDisplacement, gaussian )
 %score will actually be the matrix of scores   
 
 %BEWARE VARIABLES VISIBILITY
 [height, width, ~] = size (currentFrame);
 
 label_info = index(label, 2:end);
-score = zeros(height, width);
+score = zeros(height, width, 3);
 dx = label_info(2);
 dy = label_info(3);
 
 currentFrameDisplaced = displaceImage( currentFrame, maxDisplacement, dy, dx);
-currentFrameDisplacedIntegral = integralImage( double (currentFrameDisplaced) );
-previousFrameIntegral = integralImage( double(previousFrame) );
-score = abs(currentFrameDisplaced - previousFrame);
+%currentFrameDisplacedIntegral = integralImage( double (currentFrameDisplaced) );
+%previousFrameIntegral = integralImage( double(previousFrame) );
+
+score(:,:,1) = abs(conv2 (double(currentFrameDisplaced(:,:,1)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,1)),double (gaussian), 'same'));
+score(:,:,2) = abs(conv2 (double(currentFrameDisplaced(:,:,2)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,2)),double (gaussian), 'same'));
+score(:,:,3) = abs(conv2 (double(currentFrameDisplaced(:,:,3)), double(gaussian), 'same') - conv2(double(previousFrame(:,:,3)),double (gaussian), 'same'));
+%score = abs(currentFrameDisplaced - previousFrame);
+%size(score)
+%pause(10)
 score = score(:,:,1) + score (:,:,2) + score(:,:,3);
-%gaussian = fspecial ( 'gaussian', [windowOmega, windowOmega], 0.5);
-%  for y = 1:windowOmega:height
-%      for x = 1:windowOmega:width   
-%           
-%           winCurr = getNeigborhoodWindow(y, x, abs(currentFrameDisplacedIntegral-previousFrameIntegral), windowOmega, maxDisplacement);
-%           score(y:y+windowOmega,x:x+windowOmega) = winCurr(1,1) + winCurr(windowOmega, windowOmega) - winCurr(1, windowOmega) - winCurr(windowOmega, 1);
-%             
-%      end   
-%  end
+% for y = 1:windowOmega:height
+%       for x = 1:windowOmega:width   
+%            tic
+%            winCurr = getNeigborhoodWindow(y, x, abs(currentFrameDisplacedIntegral-previousFrameIntegral), windowOmega, maxDisplacement);
+%            score(y:y+windowOmega,x:x+windowOmega) = winCurr(1,1) + winCurr(windowOmega, windowOmega) - winCurr(1, windowOmega) - winCurr(windowOmega, 1);
+%            toc
+%       end   
+% end
 
 
 end
