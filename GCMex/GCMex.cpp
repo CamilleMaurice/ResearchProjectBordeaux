@@ -6,8 +6,6 @@
 #include "mex.h"
 #include "GCoptimization.h"
 #include <stdlib.h>
-#include <cstdlib>
-#include <iostream>
 
 void mexFunction(
     int		  nout, 	/* number of expected outputs */
@@ -17,7 +15,7 @@ void mexFunction(
     )
 {
    
-  enum {IN_CLASS=0,IN_UNARY,IN_PAIRWISE,IN_LABELCOST,IN_EXPANSION,W,H} ;
+  enum {IN_CLASS=0,IN_UNARY,IN_PAIRWISE,IN_LABELCOST,IN_EXPANSION} ;
   enum {OUT_LABELS=0, OUT_ENERGY, OUT_ENERGYAFTER} ;
 
   bool expansion = false;
@@ -25,8 +23,8 @@ void mexFunction(
   /****************************************************************************
    * ERROR CHECKING
    ***************************************************************************/
-  if (nin != 6 && nin != 7)
-    mexErrMsgTxt("6 or 7arguments are required.");
+  if (nin != 4 && nin != 5)
+    mexErrMsgTxt("Four or five arguments are required.");
   if (nin == 5)
     expansion = *mxGetPr(in[IN_EXPANSION]) > 0;
   if (nout > 3)
@@ -52,10 +50,10 @@ void mexFunction(
   if(mxGetM(in[IN_LABELCOST]) != mxGetN(in[IN_LABELCOST]) || 
      mxGetM(in[IN_LABELCOST]) != num_labels)
     mexErrMsgTxt("Labelcost is not symmetric or does not match rows in Unary term.");
-//modification
-//   if(mxGetM(in[IN_PAIRWISE]) != num_labels || 
-//      mxGetN(in[IN_PAIRWISE]) != num_labels)
-//     mexErrMsgTxt("Pairwise is not symmetric or does not match cols in Unary term.");
+
+  if(mxGetM(in[IN_PAIRWISE]) != num_pixels || 
+     mxGetN(in[IN_PAIRWISE]) != num_pixels)
+    mexErrMsgTxt("Pairwise is not symmetric or does not match cols in Unary term.");
 
 
   /* Create output arrays */
@@ -90,8 +88,8 @@ void mexFunction(
   /****************************************************************************
    * Setup Graph and Perform Optimization
    ***************************************************************************/
-  try {//4 neighborhood grid graph
-    GCoptimizationGridGraph * gc = new GCoptimizationGridGraph(W,H, num_labels);
+  try {
+    GCoptimizationGeneralGraph * gc = new GCoptimizationGeneralGraph(num_pixels, num_labels);
  
     for (int i = 0; i < num_pixels; i++) {
       gc->setLabel(i, (int)classes[i]);
@@ -100,32 +98,29 @@ void mexFunction(
     gc->setDataCost(data);
 
     /* Data costs are nlabels rows x npixels cols */
-    float * sp_pairwise = (float *)mxGetData(in[IN_PAIRWISE]);
-    
-    std::cout<<"launching smooth cost in gc mex.cpp"<<std::endl;
-    system("pause");
-    gc->setSmoothCost(sp_pairwise);
+    float * labelcost = (float *)mxGetData(in[IN_LABELCOST]);
+    gc->setSmoothCost(labelcost);
 
 
     /* Set spatialy varying part of the smoothness cost with the neighborhood 
-//      */
-//     mwSize total = 0;
-//     double * pair = mxGetPr(in[IN_PAIRWISE]);
-//     mwIndex * ir = mxGetIr(in[IN_PAIRWISE]);
-//     mwIndex * jc = mxGetJc(in[IN_PAIRWISE]);
-//     for (int col=0; col < num_pixels; col++) {
-//       mwIndex starting_row_index = jc[col];
-//       mwIndex stopping_row_index = jc[col+1];
-//       if (starting_row_index == stopping_row_index)
-//         continue;
-//       
-//       for (int idx = starting_row_index; idx < stopping_row_index; idx++) {
-//         /* only set bottom triangle of pairwise, per GC_README */
-//         if ( ir[idx] > col )
-//           gc->setNeighbors(ir[idx], col, pair[total]);
-//         total++;
-//       }
-//     }
+     */
+    mwSize total = 0;
+    double * pair = mxGetPr(in[IN_PAIRWISE]);
+    mwIndex * ir = mxGetIr(in[IN_PAIRWISE]);
+    mwIndex * jc = mxGetJc(in[IN_PAIRWISE]);
+    for (int col=0; col < num_pixels; col++) {
+      mwIndex starting_row_index = jc[col];
+      mwIndex stopping_row_index = jc[col+1];
+      if (starting_row_index == stopping_row_index)
+        continue;
+      
+      for (int idx = starting_row_index; idx < stopping_row_index; idx++) {
+        /* only set bottom triangle of pairwise, per GC_README */
+        if ( ir[idx] > col )
+          gc->setNeighbors(ir[idx], col, pair[total]);
+        total++;
+      }
+    }
 
     *energy = gc->compute_energy();
 
@@ -157,7 +152,4 @@ void mexFunction(
     mexErrMsgTxt(e.message);
   }
 
-}
-int smoothFn(){
-    return 1;
 }

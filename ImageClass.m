@@ -1,14 +1,16 @@
 classdef ImageClass
     properties
+        fileNumber
         image
         rect
         fgVector
         bgVector
-        %TO DO : THINK IF ADDING THE OUTPUT MASK AS A PROPERTY IS GOOD OR NOT
+        outMask
     end
     methods
           %Constructor
-          function obj = ImageClass( curr, roi )
+          function obj = ImageClass( fileNumber, curr, roi )
+          obj.fileNumber = fileNumber;
           obj.image = curr;
           obj.rect = roi;
           obj.fgVector = getObjVector(obj);

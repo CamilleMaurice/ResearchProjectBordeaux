@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <cstdlib>
-#include <iostream>
+
 // will leave this one just for the laughs :)
 //#define olga_assert(expr) assert(!(expr))
 
@@ -131,7 +130,6 @@ void GCoptimization::setSmoothCost(SmoothCostFnExtra fn, void* extraData) {
 //-------------------------------------------------------------------
 
 void GCoptimization::setSmoothCost(EnergyTermType *smoothArray) {
-    std::cout<<"launching smooth cost in gc optimization.cpp with "<<m_num_labels<<"labels"<<std::endl;
 	specializeSmoothCostFunctor(SmoothCostFnFromArray(smoothArray, m_num_labels));
 }
 
