@@ -1,36 +1,31 @@
 % controller
-function z = MC_segm(folder,first_frame,roi,method)
-disp('beginning initialization');
-addpath(genpath('GCMex/'));
-% DONE: iterate through all frames
-dname = first_frame;
+function z = MC_segm(folder, firstFrame, roi, ~)
+
+% Set up parameters to iterate though frames
 filelist = dir(folder);
-%For more genericity we should find a way to get rid of this -3, at least
-%back to -2 (detect the folder).
 nFiles = size(filelist,1)-2;
-filelist.name;
-prevFrame = strcat([folder, first_frame]);
-prev_Im=imread(prevFrame);
-[h,w,~]=size(prev_Im);
+prevFrame = strcat([folder, firstFrame]);
+prevIm = imread(prevFrame);
 
-imageObj = ImageClass(1, prev_Im, roi);  
+% Instantiate the object image
 
-for fileNumber = 4:1:nFiles%WHY: the beginning at 4?
+imageObj = ImageClass(folder, 1, prevIm, roi);  
+
+% Begin at 4 because we have a subfolder GT.
+for fileNumber = 4:1:nFiles
     tic
-    display(['processing file ' int2str(fileNumber)]);
+    display(['processing file ' int2str(fileNumber)-3]);
+ 
     frameName = filelist(fileNumber).name;
-    currFrame = strcat([folder, frameName]);
-    curr_Im=imread(currFrame);
+    currIm = imread(strcat([folder, frameName]));
     
     imageObj.fileNumber = fileNumber;
-    imageObj.image = curr_Im;
+    imageObj.image = currIm;
     
     getSegmentationC1(imageObj);
     
-
-
     %imwrite(imageObj.outMask, sprintf('mask_%d.jpg',fileNumber));
-    prev_Im = curr_Im;
+    prevIm = currIm;
     toc
     %TODO:write file of mask and segmented object
     %TODO:compute measures for each file

@@ -1,15 +1,17 @@
 classdef ImageClass
     properties
+        path
         fileNumber
         image
         rect
         fgVector
         bgVector
-        outMask
+        mask
     end
     methods
           %Constructor
-          function obj = ImageClass( fileNumber, curr, roi )
+          function obj = ImageClass( folder, fileNumber, curr, roi )
+          obj.path = folder;    
           obj.fileNumber = fileNumber;
           obj.image = curr;
           obj.rect = roi;
@@ -59,7 +61,6 @@ classdef ImageClass
           end
           
           %Returns true is the coordinate (y,x) is inside the ROI, else false.
-          %TODO : Make further tests (especially about < ou <=)
           function  [bool]  = isInRoi (obj, y, x)
               
               roi = obj.rect;
@@ -85,28 +86,13 @@ classdef ImageClass
               paddedImg = padarray( img,[maxD, maxD], 'replicate' );
               imgD = paddedImg( maxD+1 +dy:end-maxD +dy, maxD+dx+1:end-maxD+dx, : );
           end
+          
+          %Update of the model, trigger generation of the results or view
+          function [] = updateMask (obj, segmentation)
+              obj.mask = segmentation;
+              folder = obj.path;
+              generateResults(folder, obj.fileNumber, obj.mask);              
+          end
     end
 end
 
-
-
-
-% %Compute the integralImage to fasten computation
-% function res = integralImage ( img )
-%     RChannel = img(:,:,1); GChannel = img(:,:,2); BChannel = img(:,:,3);
-%     resR = cumsum(cumsum(RChannel')');
-%     resG = cumsum(cumsum(GChannel')');
-%     resB = cumsum(cumsum(BChannel')');
-%     res = resR + resG + resB;
-% end
-% 
-% function [Window] =  getNeigborhoodWindow ( y, x, image, WindowSize, maxDisplacement )
-% 
-%     half = floor(WindowSize/2);
-%     padSz = half + maxDisplacement;
-%     PaddedImg = padarray(image,[padSz, padSz],0);
-%     x_pad = x + padSz ;
-%     y_pad = y + padSz ;
-%     %do padarray to co ntrol borders
-%     Window = PaddedImg(y_pad - half : y_pad + half, x_pad - half : x_pad + half);
-% end
